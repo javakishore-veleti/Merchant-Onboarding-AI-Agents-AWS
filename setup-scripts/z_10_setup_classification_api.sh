@@ -1,3 +1,123 @@
+#!/bin/bash
+
+# =============================================================================
+# z_10_setup_classification_api.sh
+# Creates REST API for document classification
+# =============================================================================
+
+set -e  # Exit on error
+
+echo "=========================================="
+echo "Step 10: Creating Classification API"
+echo "=========================================="
+
+# Define paths
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+APP_PATH="$PROJECT_ROOT/moaaa_api_services/document_classification"
+API_PATH="$APP_PATH/api"
+
+echo "API path: $API_PATH"
+
+# =============================================================================
+# Create api/serializers.py
+# =============================================================================
+echo "Creating api/serializers.py..."
+cat > "$API_PATH/serializers.py" << 'EOF'
+from rest_framework import serializers
+from ..models import ClassificationJob, ClassificationResult
+
+
+class ClassificationResultSerializer(serializers.ModelSerializer):
+    """Serializer for ClassificationResult."""
+    
+    class Meta:
+        model = ClassificationResult
+        fields = [
+            'id',
+            'job',
+            'application_id',
+            'document_s3_bucket',
+            'document_s3_key',
+            'document_filename',
+            'document_type',
+            'confidence_score',
+            'is_active',
+            'requires_review',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class ClassificationJobSerializer(serializers.ModelSerializer):
+    """Serializer for ClassificationJob."""
+    
+    results = ClassificationResultSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = ClassificationJob
+        fields = [
+            'id',
+            'name',
+            'description',
+            'status',
+            'total_documents',
+            'processed_documents',
+            'failed_documents',
+            'error_message',
+            'created_at',
+            'updated_at',
+            'started_at',
+            'completed_at',
+            'results',
+        ]
+        read_only_fields = [
+            'id', 'status', 'total_documents', 'processed_documents',
+            'failed_documents', 'error_message', 'created_at', 'updated_at',
+            'started_at', 'completed_at'
+        ]
+
+
+class ClassifyDocumentRequestSerializer(serializers.Serializer):
+    """Request serializer for classifying a single document."""
+    
+    s3_bucket = serializers.CharField(max_length=255)
+    s3_key = serializers.CharField(max_length=1024)
+    filename = serializers.CharField(max_length=255)
+    application_id = serializers.CharField(max_length=255)
+
+
+class ClassifyBatchRequestSerializer(serializers.Serializer):
+    """Request serializer for batch classification."""
+    
+    documents = ClassifyDocumentRequestSerializer(many=True)
+    job_name = serializers.CharField(max_length=255, required=False, default='')
+    job_description = serializers.CharField(required=False, default='')
+
+
+class ClassifyDocumentResponseSerializer(serializers.Serializer):
+    """Response serializer for classification result."""
+    
+    document_type = serializers.CharField()
+    confidence_score = serializers.FloatField()
+    requires_review = serializers.BooleanField()
+    result_id = serializers.UUIDField()
+
+
+class ActivateDeactivateSerializer(serializers.Serializer):
+    """Request serializer for activate/deactivate actions."""
+    
+    user = serializers.CharField(max_length=255, required=False, default='')
+EOF
+
+echo "Created api/serializers.py"
+
+# =============================================================================
+# Create api/views.py
+# =============================================================================
+echo "Creating api/views.py..."
+cat > "$API_PATH/views.py" << 'EOF'
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -270,3 +390,88 @@ class ClassifyViewSet(viewsets.ViewSet):
             'failed': job.failed_documents,
             'results': results
         }, status=status.HTTP_201_CREATED)
+EOF
+
+echo "Created api/views.py"
+
+# =============================================================================
+# Create api/urls.py
+# =============================================================================
+echo "Creating api/urls.py..."
+cat > "$API_PATH/urls.py" << 'EOF'
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import ClassificationJobViewSet, ClassificationResultViewSet, ClassifyViewSet
+
+router = DefaultRouter()
+router.register(r'jobs', ClassificationJobViewSet, basename='classification-jobs')
+router.register(r'results', ClassificationResultViewSet, basename='classification-results')
+router.register(r'classify', ClassifyViewSet, basename='classify')
+
+urlpatterns = [
+    path('', include(router.urls)),
+]
+EOF
+
+echo "Created api/urls.py"
+
+# =============================================================================
+# Update main urls.py to include classification API
+# =============================================================================
+echo "Updating main urls.py..."
+MAIN_URLS="$PROJECT_ROOT/moaaa_api_services/moaaa_api_services/urls.py"
+
+cat > "$MAIN_URLS" << 'EOF'
+from django.contrib import admin
+from django.urls import path, include
+from rest_framework.response import Response
+from rest_framework.decorators import api_view
+
+
+@api_view(['GET'])
+def api_root(request):
+    """API root endpoint."""
+    return Response({
+        'message': 'Welcome to MOAAA API Services',
+        'version': '1.0.0',
+        'endpoints': {
+            'admin': '/admin/',
+            'classification': '/api/classification/',
+        }
+    })
+
+
+urlpatterns = [
+    path('', api_root, name='api-root'),
+    path('admin/', admin.site.urls),
+    path('api/classification/', include('document_classification.api.urls')),
+]
+EOF
+
+echo "Updated main urls.py"
+
+echo ""
+echo "=========================================="
+echo "Classification API created!"
+echo "=========================================="
+echo ""
+echo "Endpoints:"
+echo ""
+echo "  GET  /                                    - API root"
+echo "  GET  /api/classification/jobs/            - List jobs"
+echo "  POST /api/classification/jobs/            - Create job"
+echo "  GET  /api/classification/jobs/{id}/       - Get job"
+echo ""
+echo "  GET  /api/classification/results/         - List results"
+echo "  GET  /api/classification/results/{id}/    - Get result"
+echo "  POST /api/classification/results/{id}/activate/   - Activate"
+echo "  POST /api/classification/results/{id}/deactivate/ - Deactivate"
+echo ""
+echo "  POST /api/classification/classify/        - Classify single document"
+echo "  POST /api/classification/classify/batch/  - Classify batch"
+echo ""
+echo "Next steps:"
+echo "  1. npm run django:runserver"
+echo "  2. Visit http://127.0.0.1:8000/"
+echo "  3. Test with: curl http://127.0.0.1:8000/api/classification/jobs/"
+echo ""

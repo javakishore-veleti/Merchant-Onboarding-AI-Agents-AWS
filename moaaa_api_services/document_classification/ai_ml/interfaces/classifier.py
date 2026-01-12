@@ -1,16 +1,35 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional, Dict, Any
+from typing import Dict, Any, List
+from dataclasses import dataclass
 
 
-class IDocument_classification(ABC):
-    """Abstract interface for document_classification AI/ML operations."""
+@dataclass
+class ClassificationInput:
+    """Input for document classification."""
+    s3_bucket: str
+    s3_key: str
+    filename: str
+    application_id: str
+
+
+@dataclass
+class ClassificationOutput:
+    """Output from document classification."""
+    document_type: str
+    confidence_score: float
+    requires_review: bool
+    raw_response: Dict[str, Any]
+
+
+class IClassifier(ABC):
+    """Abstract interface for document classifier."""
 
     @abstractmethod
-    def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Process input and return results."""
+    def classify(self, input_data: ClassificationInput) -> ClassificationOutput:
+        """Classify a single document."""
         pass
 
     @abstractmethod
-    def process_batch(self, input_data_list: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Process multiple inputs and return results."""
+    def classify_batch(self, input_data_list: List[ClassificationInput]) -> List[ClassificationOutput]:
+        """Classify multiple documents."""
         pass
