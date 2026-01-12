@@ -1,0 +1,30 @@
+{
+  "name": "merchant-onboarding-ai-agents-aws",
+  "version": "1.0.0",
+  "description": "AI-powered merchant onboarding platform using Amazon Bedrock, AgentCore, and Nova Act",
+  "private": true,
+  "scripts": {
+    "django:runserver": "cd moaaa_api_services && $HOME/runtime_data/delete_me_later/python_venvs/moaaa_api_services/bin/python manage.py runserver",
+    "django:runserver:8001": "cd moaaa_api_services && $HOME/runtime_data/delete_me_later/python_venvs/moaaa_api_services/bin/python manage.py runserver 8001",
+    "django:migrate": "cd moaaa_api_services && $HOME/runtime_data/delete_me_later/python_venvs/moaaa_api_services/bin/python manage.py migrate",
+    "django:makemigrations": "cd moaaa_api_services && $HOME/runtime_data/delete_me_later/python_venvs/moaaa_api_services/bin/python manage.py makemigrations",
+    "django:shell": "cd moaaa_api_services && $HOME/runtime_data/delete_me_later/python_venvs/moaaa_api_services/bin/python manage.py shell",
+    "django:createsuperuser": "cd moaaa_api_services && $HOME/runtime_data/delete_me_later/python_venvs/moaaa_api_services/bin/python manage.py createsuperuser",
+    "django:test": "cd moaaa_api_services && $HOME/runtime_data/delete_me_later/python_venvs/moaaa_api_services/bin/python manage.py test",
+    "pip:install": "$HOME/runtime_data/delete_me_later/python_venvs/moaaa_api_services/bin/pip install -r moaaa_api_services/requirements.txt",
+    "pip:freeze": "$HOME/runtime_data/delete_me_later/python_venvs/moaaa_api_services/bin/pip freeze",
+    "setup:venv": "./setup-scripts/z_01_setup_venv.sh",
+    "setup:django": "./setup-scripts/z_02_setup_django_project.sh",
+    "setup:package-json": "./setup-scripts/z_02a_setup_package_json.sh",
+    "setup:domain-apps": "./setup-scripts/z_03_setup_domain_apps.sh",
+    "setup:aiml-apps": "./setup-scripts/z_04_setup_aiml_apps.sh",
+    "setup:root-files": "./setup-scripts/z_05_setup_root_files.sh",
+    "setup:all": "npm run setup:venv && npm run setup:django && npm run setup:package-json && npm run setup:domain-apps && npm run setup:aiml-apps && npm run setup:root-files"
+  },
+  "author": "Kishore Veleti",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/javakishore-veleti/Merchant-Onboarding-AI-Agents-AWS.git"
+  }
+}
