@@ -54,6 +54,26 @@ Merchant-Onboarding-AI-Agents-AWS/
 - Node.js 18+ (for npm scripts)
 - AWS Account with Bedrock access
 
+### AWS Profile Setup
+
+This project uses AWS profile `moaaa_api_services`. Set it up before running:
+
+```bash
+# Create AWS profile
+aws configure --profile moaaa_api_services
+
+# Enter when prompted:
+# AWS Access Key ID: <your-access-key>
+# AWS Secret Access Key: <your-secret-key>
+# Default region name: us-east-1
+# Default output format: json
+
+# Verify profile
+aws sts get-caller-identity --profile moaaa_api_services
+```
+
+The profile is read from `~/.aws/credentials` and `~/.aws/config`.
+
 ### Setup
 
 ```bash
